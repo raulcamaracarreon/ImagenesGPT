@@ -6,3 +6,7 @@ __pycache__/
 imagenes/*
 !imagenes/.gitkeep
 .DS_Store
+
+# Resultados locales del empaquetado
+build/
+dist/

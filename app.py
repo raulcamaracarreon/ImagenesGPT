@@ -8,6 +8,7 @@ import io
 import os
 import re
 import secrets
+import sys
 import threading
 
 import keyring
@@ -22,9 +23,22 @@ from openai import OpenAI, OpenAIError
 from PIL import Image, UnidentifiedImageError
 
 BASE_DIR = Path(__file__).resolve().parent
-load_dotenv(BASE_DIR / ".env")
-OUTPUT_DIR = BASE_DIR / "imagenes"
-OUTPUT_DIR.mkdir(exist_ok=True)
+
+
+def storage_directory() -> Path:
+    """En desarrollo conserva imagenes/; distribuido usa datos del usuario."""
+    if getattr(sys, "frozen", False):
+        local = os.environ.get("LOCALAPPDATA")
+        root = Path(local) if local else Path.home() / "AppData" / "Local"
+        return root / "ImagenesGPT" / "imagenes"
+    return BASE_DIR / "imagenes"
+
+
+if not getattr(sys, "frozen", False):
+    load_dotenv(BASE_DIR / ".env")
+
+OUTPUT_DIR = storage_directory()
+OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
 MODELS = {
     "gpt-image-2.5-flare": "GPT Image 2.5 Flare",
