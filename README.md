@@ -5,11 +5,13 @@ Aplicación **local para Windows** que genera y edita imágenes con la API de Op
 ## Instalación (Windows)
 
 1. Descarga o clona el repositorio y extrae los archivos a una carpeta.
-2. Instala Python 3.11 o superior desde [python.org](https://www.python.org/downloads/) (o utiliza una instalación existente con el lanzador `py`).
+2. Necesitas Python 3.11 o superior. Puedes usar Python instalado desde [python.org](https://www.python.org/downloads/) o una instalación existente, por ejemplo Miniforge. El instalador acepta `py`, `python`, `python3` y Python de un entorno Conda activado. No instales otra copia de Python si ya tienes una versión compatible.
 3. Haz doble clic en **`instalar.bat`** para crear el entorno virtual e instalar dependencias.
 4. Abre el archivo **`.env`** y reemplaza `pega_aqui_tu_clave_api` por tu clave de [OpenAI API](https://platform.openai.com/api-keys). **No compartas esta clave y no subas `.env` a GitHub.**
 5. Haz doble clic en **`Iniciar generador.bat`**. Se abrirá el navegador en `http://127.0.0.1:5000`.
 6. Usa las pestañas **Crear imagen** o **Editar imagen**. Las imágenes se guardan en la carpeta `imagenes/`.
+
+Si aparece «No se encontró una instalación accesible de Python», ejecuta `python --version`, `py --version` y `where.exe python` en PowerShell. En Miniforge Prompt puedes activar un entorno de Python 3.11+ y ejecutar `instalar.bat` desde la carpeta del proyecto.
 
 Para cerrar, cierra la ventana de comandos donde se está ejecutando Flask.
 
@@ -30,7 +32,7 @@ La API de OpenAI **se factura por separado** de ChatGPT y requiere créditos o f
 ## Desarrollo y pruebas
 
 ```powershell
-py -3 -m venv .venv
+python -m venv .venv  # alternativamente: py -3 -m venv .venv
 .\.venv\Scripts\python.exe -m pip install -r requirements-dev.txt
 .\.venv\Scripts\python.exe -m pytest -q
 .\.venv\Scripts\python.exe app.py
