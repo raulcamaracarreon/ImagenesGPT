@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="local-token" content="{{ local_token }}">
+  <title>Imágenes GPT · Estudio creativo</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <script defer src="{{ url_for('static', filename='app.js') }}"></script>
+</head>
+<body>
+  <main class="shell">
+    <header class="site-header">
+      <div class="brand"><span class="brand-icon" aria-hidden="true">✦</span><div><strong>Imágenes GPT</strong><span>Tu estudio creativo personal</span></div></div>
+      <span class="local-pill">● Solo en esta PC</span>
+    </header>
+    <div class="layout">
+      <section class="panel editor" aria-labelledby="studio-title">
+        <div class="eyebrow">ESTUDIO DE IMÁGENES</div>
+        <h1 id="studio-title">Imagina, crea y transforma.</h1>
+        <p class="intro">Describe lo que quieres y deja que la IA lo convierta en una imagen.</p>
+        <div class="tabs" role="tablist" aria-label="Modo de trabajo">
+          <button id="tab-generate" type="button" role="tab" aria-selected="true" class="active" data-mode="generate">✦ Crear imagen</button>
+          <button id="tab-edit" type="button" role="tab" aria-selected="false" data-mode="edit">▧ Editar imagen</button>
+        </div>
+        <form id="image-form">
+          <div id="upload-wrapper" class="field hidden">
+            <label for="source-image">Imagen para editar</label>
+            <input type="file" id="source-image" name="image" accept="image/png,image/jpeg,image/webp">
+            <small>Puedes seleccionar PNG, JPG o WebP (máximo 12 MB).</small>
+          </div>
+          <div class="field">
+            <label for="prompt">¿Qué imagen tienes en mente?</label>
+            <textarea id="prompt" name="prompt" required maxlength="32000" rows="6" placeholder="Por ejemplo: Un pequeño café rodeado de flores, ilustración en acuarela con tonos pastel y luz cálida..." ></textarea>
+          </div>
+          <div class="settings">
+            <div class="field"><label for="model">Modelo</label><select id="model" name="model">{% for value, title in models.items() %}<option value="{{ value }}">{{ title }}</option>{% endfor %}</select></div>
+            <div class="field"><label for="size">Orientación</label><select id="size" name="size"><option value="1024x1024">Cuadrada (1:1)</option><option value="1024x1536">Vertical (2:3)</option><option value="1536x1024">Horizontal (3:2)</option></select></div>
+            <div class="field"><label for="quality">Calidad</label><select id="quality" name="quality"><option value="low">Baja · menor consumo</option><option value="medium" selected>Media · equilibrada</option><option value="high">Alta · más detalle</option></select></div>
+          </div>
+          <p class="usage-note">Cada generación consume crédito de tu API. No hay un cupo artificial en esta interfaz; OpenAI aplica sus propias cuotas.</p>
+          <button type="submit" id="submit-btn" class="primary">✦ Generar imagen</button>
+          <p id="status" class="status" role="status" aria-live="polite"></p>
+        </form>
+      </section>
+      <section class="panel results" aria-labelledby="result-title">
+        <div class="results-heading"><div><div class="eyebrow">RESULTADO</div><h2 id="result-title">Tu creación</h2></div><a id="download-btn" class="download hidden" download>↓ Descargar</a></div>
+        <div id="preview" class="preview empty"><div id="empty-state"><span aria-hidden="true">✧</span><h3>Un lienzo de posibilidades</h3><p>Tu imagen aparecerá aquí cuando esté lista.</p></div><img id="preview-image" class="hidden" alt="Imagen generada por IA"></div>
+        <div class="gallery-heading"><h2>Creaciones recientes</h2><button type="button" id="refresh-gallery">Actualizar</button></div>
+        <div id="gallery" class="gallery"><p class="muted">Todavía no hay imágenes guardadas.</p></div>
+      </section>
+    </div>
+    <footer>Las imágenes se guardan en la carpeta <code>imagenes/</code> de esta PC · No requiere servicios de alojamiento.</footer>
+  </main>
+</body>
+</html>
