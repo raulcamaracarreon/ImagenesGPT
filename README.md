@@ -72,7 +72,7 @@ Abre el .exe con doble clic: aparece una ventana de control con opciones de abri
 
 ### Etapa 2 — Instalador y desinstalador (después de validar el portable)
 
-Requiere Inno Setup 6 **solo en la computadora del desarrollador**. Cuando el ejecutable portátil funcione correctamente, ejecuta:
+Requiere **Inno Setup 7 o 6** [descargable desde su web oficial](https://jrsoftware.org/isdl.php) **solo en la computadora del desarrollador**. Cuando el ejecutable portátil funcione correctamente, ejecuta:
 
     .\build-installer.ps1
 
