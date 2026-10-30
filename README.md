@@ -80,7 +80,7 @@ Esto generará, si Inno Setup está instalado:
 
     dist\setup\ImagenesGPT-Setup-1.0.0.exe
 
-El instalador incluirá accesos directos y una entrada en **Aplicaciones instaladas** de Windows. Instala automáticamente en `%LOCALAPPDATA%\Programs\ImagenesGPT`, sin mostrar un selector de carpeta ni permitir elegir accidentalmente `Program Files`. Inno Setup proporciona el desinstalador automáticamente; elimina el programa y sus accesos directos. No son necesarios privilegios de administrador para la instalación por usuario.
+El instalador incluirá accesos directos y una entrada en **Aplicaciones instaladas** de Windows. **Muestra siempre la pantalla para elegir la carpeta de instalación**: propone `%LOCALAPPDATA%\Programs\ImagenesGPT` por defecto, pero permite instalar en otra carpeta o unidad donde el usuario tenga permisos de escritura. Al reinstalar, propone la ubicación elegida anteriormente. El modo predeterminado es instalación por usuario (`PrivilegesRequired=lowest`), sin solicitud automática de permisos elevados; por eso instalar en una carpeta protegida como `C:\Program Files` puede provocar «Acceso denegado». Inno Setup proporciona el desinstalador automáticamente; elimina el programa y sus accesos directos.
 
 ### Qué se conserva al actualizar o desinstalar
 
