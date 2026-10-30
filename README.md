@@ -80,7 +80,7 @@ Esto generará, si Inno Setup está instalado:
 
     dist\setup\ImagenesGPT-Setup-1.0.0.exe
 
-El instalador incluirá accesos directos y una entrada en **Aplicaciones instaladas** de Windows. Inno Setup proporciona el desinstalador automáticamente; elimina el programa y sus accesos directos. No son necesarios privilegios de administrador para la instalación por usuario.
+El instalador incluirá accesos directos y una entrada en **Aplicaciones instaladas** de Windows. Instala automáticamente en `%LOCALAPPDATA%\Programs\ImagenesGPT`, sin mostrar un selector de carpeta ni permitir elegir accidentalmente `Program Files`. Inno Setup proporciona el desinstalador automáticamente; elimina el programa y sus accesos directos. No son necesarios privilegios de administrador para la instalación por usuario.
 
 ### Qué se conserva al actualizar o desinstalar
 
