@@ -4,7 +4,19 @@ const submit = document.getElementById('submit-btn');
 const status = document.getElementById('status');
 const source = document.getElementById('source-image');
 const wrapper = document.getElementById('upload-wrapper');
+const download = document.getElementById('download-btn');
+const downloadFormat = document.getElementById('download-format');
+let selectedFilename = null;
 let mode = 'generate';
+
+function updateDownloadLink() {
+  if (!selectedFilename) return;
+  const extension = downloadFormat.value;
+  download.href = `/api/download/${encodeURIComponent(selectedFilename)}?format=${extension}`;
+  download.download = selectedFilename.replace(/\.webp$/i, `.${extension}`);
+}
+
+downloadFormat.addEventListener('change', updateDownloadLink);
 
 for (const tab of document.querySelectorAll('[data-mode]')) {
   tab.addEventListener('click', () => {
@@ -21,15 +33,15 @@ for (const tab of document.querySelectorAll('[data-mode]')) {
   });
 }
 
-function showImage(url) {
+function showImage(url, filename) {
   const image = document.getElementById('preview-image');
   image.src = url;
   image.classList.remove('hidden');
   document.getElementById('empty-state').classList.add('hidden');
   document.getElementById('preview').classList.remove('empty');
-  const download = document.getElementById('download-btn');
-  download.href = url;
-  download.classList.remove('hidden');
+  selectedFilename = filename;
+  updateDownloadLink();
+  document.getElementById('download-controls').classList.remove('hidden');
 }
 
 async function refreshGallery() {
@@ -56,7 +68,7 @@ async function refreshGallery() {
       img.alt = 'Creación guardada';
       img.loading = 'lazy';
       button.append(img);
-      button.addEventListener('click', () => showImage(item.url));
+      button.addEventListener('click', () => showImage(item.url, item.filename));
       gallery.append(button);
     }
   } catch (error) {
@@ -84,7 +96,7 @@ form.addEventListener('submit', async (event) => {
     });
     const data = await response.json();
     if (!response.ok) throw new Error(data.error || 'No se pudo generar la imagen.');
-    showImage(data.url);
+    showImage(data.url, data.filename);
     status.textContent = '¡Imagen lista! Se guardó en tu PC.';
     await refreshGallery();
   } catch (error) {

@@ -91,3 +91,50 @@ def test_invalid_file(client, monkeypatch):
     monkeypatch.setattr(application, "_client", lambda: SimpleNamespace(images=DummyImages()))
     response = client.post("/api/edit", headers=token_headers(), data={"prompt": "Editar", "image": (io.BytesIO(b"not image"), "fake.png")}, content_type="multipart/form-data")
     assert response.status_code == 400
+
+def test_download_formats_preserve_original(client):
+    filename = "20261030_100000_123456abcd.webp"
+    original = sample_webp()
+    (application.OUTPUT_DIR / filename).write_bytes(original)
+
+    for extension, expected_format, mime in (
+        ("jpg", "JPEG", "image/jpeg"),
+        ("png", "PNG", "image/png"),
+        ("webp", "WEBP", "image/webp"),
+    ):
+        response = client.get(f"/api/download/{filename}?format={extension}")
+        assert response.status_code == 200
+        assert response.mimetype == mime
+        assert f"{filename[:-5]}.{extension}" in response.headers["Content-Disposition"]
+        with Image.open(io.BytesIO(response.data)) as image:
+            assert image.format == expected_format
+            assert image.size == (3, 3)
+
+    assert (application.OUTPUT_DIR / filename).read_bytes() == original
+    assert len(list(application.OUTPUT_DIR.iterdir())) == 1
+
+
+def test_download_rejects_unknown_format_or_file(client):
+    filename = "20261030_100000_123456abcd.webp"
+    (application.OUTPUT_DIR / filename).write_bytes(sample_webp())
+    assert client.get(f"/api/download/{filename}?format=invalid").status_code == 400
+    assert client.get("/api/download/README.md?format=jpg").status_code == 404
+    assert client.get("/api/download/20261030_100000_fffffffffe.webp?format=jpg").status_code == 404
+
+
+def test_jpg_export_uses_white_background_for_transparency(client):
+    filename = "20261030_100000_123456abcd.webp"
+    stream = io.BytesIO()
+    Image.new("RGBA", (12, 12), (0, 0, 0, 0)).save(stream, format="WEBP", lossless=True)
+    (application.OUTPUT_DIR / filename).write_bytes(stream.getvalue())
+    response = client.get(f"/api/download/{filename}?format=jpg")
+    assert response.status_code == 200
+    with Image.open(io.BytesIO(response.data)) as image:
+        assert image.mode == "RGB"
+        assert all(channel >= 245 for channel in image.getpixel((6, 6)))
+
+
+def test_download_select_visible_in_interface(client):
+    html = client.get("/").get_data(as_text=True)
+    assert 'id="download-format"' in html
+    assert '<option value="jpg" selected>JPG</option>' in html

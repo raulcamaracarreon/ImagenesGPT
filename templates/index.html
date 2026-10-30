@@ -44,7 +44,15 @@
         </form>
       </section>
       <section class="panel results" aria-labelledby="result-title">
-        <div class="results-heading"><div><div class="eyebrow">RESULTADO</div><h2 id="result-title">Tu creación</h2></div><a id="download-btn" class="download hidden" download>↓ Descargar</a></div>
+        <div class="results-heading"><div><div class="eyebrow">RESULTADO</div><h2 id="result-title">Tu creación</h2></div><div id="download-controls" class="download-controls hidden">
+          <label for="download-format">Guardar como</label>
+          <select id="download-format" aria-label="Formato de descarga">
+            <option value="jpg" selected>JPG</option>
+            <option value="png">PNG</option>
+            <option value="webp">WebP</option>
+          </select>
+          <a id="download-btn" class="download" download>↓ Descargar</a>
+        </div></div>
         <div id="preview" class="preview empty"><div id="empty-state"><span aria-hidden="true">✧</span><h3>Un lienzo de posibilidades</h3><p>Tu imagen aparecerá aquí cuando esté lista.</p></div><img id="preview-image" class="hidden" alt="Imagen generada por IA"></div>
         <div class="gallery-heading"><h2>Creaciones recientes</h2><button type="button" id="refresh-gallery">Actualizar</button></div>
         <div id="gallery" class="gallery"><p class="muted">Todavía no hay imágenes guardadas.</p></div>

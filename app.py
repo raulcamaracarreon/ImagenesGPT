@@ -6,6 +6,7 @@ import base64
 import hmac
 import io
 import os
+import re
 import secrets
 import threading
 from datetime import date, datetime
@@ -13,7 +14,7 @@ from pathlib import Path
 from uuid import uuid4
 
 from dotenv import load_dotenv
-from flask import Flask, abort, jsonify, render_template, request, send_from_directory
+from flask import Flask, abort, jsonify, render_template, request, send_file, send_from_directory
 from openai import OpenAI, OpenAIError
 from PIL import Image, UnidentifiedImageError
 
@@ -171,6 +172,49 @@ def image_file(filename):
     if not filename.endswith(".webp"):
         abort(404)
     return send_from_directory(OUTPUT_DIR, filename, as_attachment=False)
+
+
+@app.get("/api/download/<filename>")
+def download_image(filename):
+    """Descargar una copia en el formato elegido sin modificar el original WebP."""
+    if not re.fullmatch(r"\d{8}_\d{6}_[0-9a-f]{10}\.webp", filename):
+        abort(404)
+
+    source = OUTPUT_DIR / filename
+    if not source.is_file():
+        abort(404)
+
+    output_format = request.args.get("format", "jpg").lower()
+    if output_format not in {"jpg", "png", "webp"}:
+        abort(400, description="Formato de descarga no válido.")
+    if output_format == "webp":
+        return send_file(source, as_attachment=True, download_name=filename, mimetype="image/webp")
+
+    output = io.BytesIO()
+    try:
+        with Image.open(source) as image:
+            if output_format == "png":
+                image.save(output, format="PNG", optimize=True)
+            else:
+                # JPEG no admite transparencia: utilizar blanco en áreas transparentes.
+                if "A" in image.getbands() or "transparency" in image.info:
+                    rgba = image.convert("RGBA")
+                    flattened = Image.new("RGB", rgba.size, "white")
+                    flattened.paste(rgba, mask=rgba.getchannel("A"))
+                    image_to_save = flattened
+                else:
+                    image_to_save = image.convert("RGB")
+                image_to_save.save(output, format="JPEG", quality=93, subsampling=0)
+    except (OSError, UnidentifiedImageError):
+        abort(500, description="No se pudo convertir la imagen.")
+
+    output.seek(0)
+    return send_file(
+        output,
+        mimetype="image/png" if output_format == "png" else "image/jpeg",
+        as_attachment=True,
+        download_name=f"{filename[:-5]}.{output_format}",
+    )
 
 
 @app.errorhandler(413)
