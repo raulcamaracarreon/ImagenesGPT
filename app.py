@@ -147,25 +147,49 @@ def _perform(kind: str):
         prompt, model, size, quality = _validate_request()
         _check_limit()
         params = dict(model=model, prompt=prompt, size=size, quality=quality, output_format="webp", n=1)
-        client = _client()
         if kind == "edit":
             upload = request.files.get("image")
-            if not upload or not upload.filename:
-                raise ValueError("Selecciona una imagen para editar.")
-            try:
-                with Image.open(upload.stream) as image:
-                    image.verify()
-                    fmt = image.format
-            except (UnidentifiedImageError, OSError, ValueError) as exc:
-                raise ValueError("El archivo no es una imagen válida.") from exc
-            if fmt not in {"PNG", "JPEG", "WEBP"}:
-                raise ValueError("Usa una imagen PNG, JPG o WebP.")
-            upload.stream.seek(0)
-            image_data = io.BytesIO(upload.stream.read())
-            image_data.name = "referencia." + {"PNG": "png", "JPEG": "jpg", "WEBP": "webp"}[fmt]
-            result = client.images.edit(image=image_data, **params)
+            saved_name = request.form.get("saved_image", "").strip()
+            has_upload = bool(upload and upload.filename)
+
+            if saved_name and has_upload:
+                raise ValueError("Elige una sola imagen: del historial o de tu PC.")
+
+            if saved_name:
+                # Solo se permiten nombres generados por la aplicación.
+                # Nunca aceptamos rutas arbitrarias enviadas desde el navegador.
+                if not re.fullmatch(r"\d{8}_\d{6}_[0-9a-f]{10}\.webp", saved_name):
+                    raise ValueError("La imagen del historial no es válida.")
+                saved_path = OUTPUT_DIR / saved_name
+                if not saved_path.is_file() or saved_path.is_symlink():
+                    raise ValueError("La imagen del historial ya no está disponible.")
+                try:
+                    with Image.open(saved_path) as image:
+                        if image.format != "WEBP":
+                            raise ValueError("La imagen del historial no es WebP.")
+                        image.verify()
+                    image_data = io.BytesIO(saved_path.read_bytes())
+                    image_data.name = "historial.webp"
+                except (UnidentifiedImageError, OSError) as exc:
+                    raise ValueError("No se pudo abrir la imagen del historial.") from exc
+            elif has_upload:
+                try:
+                    with Image.open(upload.stream) as image:
+                        image.verify()
+                        fmt = image.format
+                except (UnidentifiedImageError, OSError, ValueError) as exc:
+                    raise ValueError("El archivo no es una imagen válida.") from exc
+                if fmt not in {"PNG", "JPEG", "WEBP"}:
+                    raise ValueError("Usa una imagen PNG, JPG o WebP.")
+                upload.stream.seek(0)
+                image_data = io.BytesIO(upload.stream.read())
+                image_data.name = "referencia." + {"PNG": "png", "JPEG": "jpg", "WEBP": "webp"}[fmt]
+            else:
+                raise ValueError("Selecciona una imagen del historial o de tu PC.")
+
+            result = _client().images.edit(image=image_data, **params)
         else:
-            result = client.images.generate(**params)
+            result = _client().images.generate(**params)
         filename = _save_image(result)
         return jsonify(ok=True, filename=filename, url=f"/imagenes/{filename}")
     except ValueError as exc:

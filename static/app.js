@@ -4,10 +4,54 @@ const submit = document.getElementById('submit-btn');
 const status = document.getElementById('status');
 const source = document.getElementById('source-image');
 const wrapper = document.getElementById('upload-wrapper');
+const savedInput = document.getElementById('saved-image');
+const savedChoice = document.getElementById('saved-image-choice');
+const savedThumb = document.getElementById('saved-image-thumb');
+const savedName = document.getElementById('saved-image-name');
+const editCurrentButton = document.getElementById('edit-current-btn');
 const download = document.getElementById('download-btn');
 const downloadFormat = document.getElementById('download-format');
 let selectedFilename = null;
 let mode = 'generate';
+
+function setMode(nextMode) {
+  mode = nextMode;
+  for (const tab of document.querySelectorAll('[data-mode]')) {
+    const active = tab.dataset.mode === mode;
+    tab.classList.toggle('active', active);
+    tab.setAttribute('aria-selected', String(active));
+  }
+  wrapper.classList.toggle('hidden', mode !== 'edit');
+  source.required = mode === 'edit' && !savedInput.value;
+  submit.textContent = mode === 'edit' ? '✦ Editar imagen' : '✦ Generar imagen';
+  status.textContent = '';
+}
+
+function clearSavedImage() {
+  savedInput.value = '';
+  savedChoice.classList.add('hidden');
+  savedThumb.removeAttribute('src');
+  savedName.textContent = '';
+  source.required = mode === 'edit';
+}
+
+function selectSavedImage(filename) {
+  savedInput.value = filename;
+  savedName.textContent = filename;
+  savedThumb.src = `/imagenes/${encodeURIComponent(filename)}`;
+  savedChoice.classList.remove('hidden');
+  source.value = '';
+  setMode('edit');
+  document.getElementById('prompt').focus();
+}
+
+editCurrentButton.addEventListener('click', () => {
+  if (selectedFilename) selectSavedImage(selectedFilename);
+});
+document.getElementById('clear-saved-image').addEventListener('click', clearSavedImage);
+source.addEventListener('change', () => {
+  if (source.files.length) clearSavedImage();
+});
 
 function updateDownloadLink() {
   if (!selectedFilename) return;
@@ -19,18 +63,7 @@ function updateDownloadLink() {
 downloadFormat.addEventListener('change', updateDownloadLink);
 
 for (const tab of document.querySelectorAll('[data-mode]')) {
-  tab.addEventListener('click', () => {
-    mode = tab.dataset.mode;
-    for (const other of document.querySelectorAll('[data-mode]')) {
-      const selected = other === tab;
-      other.classList.toggle('active', selected);
-      other.setAttribute('aria-selected', String(selected));
-    }
-    wrapper.classList.toggle('hidden', mode !== 'edit');
-    source.required = mode === 'edit';
-    submit.textContent = mode === 'edit' ? '✦ Editar imagen' : '✦ Generar imagen';
-    status.textContent = '';
-  });
+  tab.addEventListener('click', () => setMode(tab.dataset.mode));
 }
 
 function showImage(url, filename) {
@@ -40,6 +73,7 @@ function showImage(url, filename) {
   document.getElementById('empty-state').classList.add('hidden');
   document.getElementById('preview').classList.remove('empty');
   selectedFilename = filename;
+  editCurrentButton.classList.remove('hidden');
   updateDownloadLink();
   document.getElementById('download-controls').classList.remove('hidden');
 }

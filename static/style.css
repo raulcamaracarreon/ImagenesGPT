@@ -21,3 +21,14 @@
 .key-configuration .key-feedback.error{color:#b64553}
 .key-configuration small{display:block;font-size:11px;color:#807a8a;margin-top:8px;line-height:1.45}
 .key-configuration small a{color:#6144a5}
+
+/* Elegir una creación previa como fuente para edición */
+.edit-current{display:block;margin:-13px 0 17px auto;border:1px solid #dcd1ed;border-radius:10px;background:#f5f1fb;color:#6144a5;font-size:12px;font-weight:700;padding:10px 13px}
+.edit-current:hover{background:#eae2f7}
+.saved-image-choice{display:flex;align-items:center;gap:11px;padding:10px;background:#f8f5fc;border:1px solid #e7dbf2;border-radius:12px;margin-bottom:11px}
+.saved-image-choice img{width:62px;height:62px;object-fit:cover;border-radius:8px;flex-shrink:0}
+.saved-image-choice-copy{min-width:0;display:flex;flex-direction:column;gap:5px}
+.saved-image-choice-copy strong{font-size:12px;color:#413452}
+.saved-image-choice-copy span{font-size:11px;color:#807a8a;overflow-wrap:anywhere}
+.saved-image-choice-copy button{font-size:11px;color:#6e50ae;text-decoration:underline;border:0;background:transparent;text-align:left;padding:0;align-self:flex-start}
+.gallery-tip{font-size:11px;color:#877e91;line-height:1.4;margin:0 0 12px}

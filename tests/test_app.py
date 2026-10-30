@@ -213,3 +213,79 @@ def test_existing_dotenv_key_remains_supported(client, fake_credentials, monkeyp
     assert application._key_from_storage()[0] == "sk-example-env-key"
     result = client.post("/api/key/forget", headers=token_headers())
     assert result.json["source"] == "environment"
+
+
+
+def test_edit_from_gallery_preserves_original_and_creates_new_image(client, monkeypatch):
+    dummy = DummyImages()
+    monkeypatch.setattr(application, "_client", lambda: SimpleNamespace(images=dummy))
+    source_name = "20261030_100000_123456abcd.webp"
+    source_content = sample_webp()
+    (application.OUTPUT_DIR / source_name).write_bytes(source_content)
+
+    response = client.post(
+        "/api/edit",
+        headers=token_headers(),
+        data={"prompt": "Añade flores", "saved_image": source_name},
+    )
+    assert response.status_code == 200
+    assert response.json["ok"] is True
+    assert dummy.last[0] == "generate"  # DummyImages.edit delega en generate.
+    assert dummy.last[1]["prompt"] == "Añade flores"
+    assert (application.OUTPUT_DIR / source_name).read_bytes() == source_content
+    assert response.json["filename"] != source_name
+    assert (application.OUTPUT_DIR / response.json["filename"]).exists()
+    assert len(client.get("/api/gallery").json["images"]) == 2
+
+
+@pytest.mark.parametrize("saved_name", [
+    "../secret.webp",
+    "..\\secret.webp",
+    "another-file.webp",
+    "20261030_100000_fffffffffe.webp",
+])
+def test_edit_rejects_invalid_or_missing_gallery_image(client, monkeypatch, saved_name):
+    called = []
+    monkeypatch.setattr(application, "_client", lambda: called.append(True))
+    response = client.post(
+        "/api/edit",
+        headers=token_headers(),
+        data={"prompt": "Editar", "saved_image": saved_name},
+    )
+    assert response.status_code == 400
+    assert called == []
+
+
+def test_edit_rejects_both_gallery_and_local_file(client, monkeypatch):
+    source_name = "20261030_100000_123456abcd.webp"
+    (application.OUTPUT_DIR / source_name).write_bytes(sample_webp())
+    called = []
+    monkeypatch.setattr(application, "_client", lambda: called.append(True))
+    response = client.post(
+        "/api/edit",
+        headers=token_headers(),
+        data={
+            "prompt": "Editar",
+            "saved_image": source_name,
+            "image": (io.BytesIO(sample_webp()), "archivo.webp"),
+        },
+        content_type="multipart/form-data",
+    )
+    assert response.status_code == 400
+    assert called == []
+
+
+def test_edit_from_gallery_requires_local_token(client):
+    response = client.post(
+        "/api/edit",
+        data={"prompt": "Editar", "saved_image": "20261030_100000_123456abcd.webp"},
+    )
+    assert response.status_code == 403
+
+
+def test_gallery_edit_controls_in_template(client):
+    html = client.get("/").get_data(as_text=True)
+    assert 'id="edit-current-btn"' in html
+    assert 'id="saved-image"' in html
+    assert 'name="saved_image"' in html
+    assert 'id="clear-saved-image"' in html

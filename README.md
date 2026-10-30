@@ -9,7 +9,7 @@ Aplicación **local para Windows** que genera y edita imágenes con la API de Op
 3. Haz doble clic en **`instalar.bat`** para crear el entorno virtual e instalar dependencias.
 4. En la interfaz, escribe tu propia clave de [OpenAI API](https://platform.openai.com/api-keys) y pulsa **Guardar clave**. La casilla **Recordar de forma segura en esta PC** está seleccionada por defecto; desactívala para utilizarla solo durante la sesión. Si ya tienes una clave en `.env`, seguirá funcionando sin configurar nada.
 5. Haz doble clic en **`Iniciar generador.bat`**. Se abrirá el navegador en `http://127.0.0.1:5000`.
-6. Usa las pestañas **Crear imagen** o **Editar imagen**. Las imágenes se guardan en la carpeta `imagenes/`. Para descargarlas, selecciona JPG (predeterminado), PNG o WebP en **Guardar como** y pulsa **Descargar**.
+6. Usa las pestañas **Crear imagen** o **Editar imagen**. Para editar una creación anterior, selecciónala en **Creaciones recientes**, pulsa **Editar esta imagen**, escribe qué deseas cambiar y pulsa **Editar imagen**. También puedes editar un archivo de tu PC como hasta ahora. La edición genera un archivo nuevo y conserva el original. Las imágenes se guardan en `imagenes/`. Para descargarlas, selecciona JPG (predeterminado), PNG o WebP en **Guardar como** y pulsa **Descargar**.
 
 Si aparece «No se encontró una instalación accesible de Python», ejecuta `python --version`, `py --version` y `where.exe python` en PowerShell. En Miniforge Prompt puedes activar un entorno de Python 3.11+ y ejecutar `instalar.bat` desde la carpeta del proyecto.
 
@@ -42,7 +42,7 @@ python -m venv .venv  # alternativamente: py -3 -m venv .venv
 
 ## Alcance del MVP
 
-Generación, edición de una imagen existente, orientación, selección de modelo/calidad, vista previa, descarga en JPG/PNG/WebP y galería local de las últimas 60 imágenes. La galería se reconstruye desde los archivos, sin una base de datos. La edición conversacional de varias rondas y estimación exacta de gastos quedan fuera de esta versión.
+Generación, edición de una imagen existente tanto de la PC como del historial, orientación, selección de modelo/calidad, vista previa, descarga en JPG/PNG/WebP y galería local de las últimas 60 imágenes. La galería se reconstruye desde los archivos, sin una base de datos. La edición conversacional de varias rondas y estimación exacta de gastos quedan fuera de esta versión.
 
 Documentación: [OpenAI Image generation](https://developers.openai.com/api/docs/guides/image-generation).
 

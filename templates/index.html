@@ -45,8 +45,17 @@
           </div>
           <div id="upload-wrapper" class="field hidden">
             <label for="source-image">Imagen para editar</label>
+            <input type="hidden" id="saved-image" name="saved_image" value="">
+            <div id="saved-image-choice" class="saved-image-choice hidden">
+              <img id="saved-image-thumb" alt="Imagen seleccionada del historial">
+              <div class="saved-image-choice-copy">
+                <strong>Imagen elegida del historial</strong>
+                <span id="saved-image-name"></span>
+                <button type="button" id="clear-saved-image">Quitar selección y usar una imagen de mi PC</button>
+              </div>
+            </div>
             <input type="file" id="source-image" name="image" accept="image/png,image/jpeg,image/webp">
-            <small>Puedes seleccionar PNG, JPG o WebP (máximo 12 MB).</small>
+            <small>También puedes seleccionar PNG, JPG o WebP de tu PC (máximo 12 MB).</small>
           </div>
           <div class="field">
             <label for="prompt">¿Qué imagen tienes en mente?</label>
@@ -72,8 +81,10 @@
           </select>
           <a id="download-btn" class="download" download>↓ Descargar</a>
         </div></div>
+        <button type="button" id="edit-current-btn" class="edit-current hidden">✎ Editar esta imagen</button>
         <div id="preview" class="preview empty"><div id="empty-state"><span aria-hidden="true">✧</span><h3>Un lienzo de posibilidades</h3><p>Tu imagen aparecerá aquí cuando esté lista.</p></div><img id="preview-image" class="hidden" alt="Imagen generada por IA"></div>
         <div class="gallery-heading"><h2>Creaciones recientes</h2><button type="button" id="refresh-gallery">Actualizar</button></div>
+        <p class="gallery-tip">Selecciona una imagen del historial y pulsa «Editar esta imagen» para modificarla.</p>
         <div id="gallery" class="gallery"><p class="muted">Todavía no hay imágenes guardadas.</p></div>
       </section>
     </div>
