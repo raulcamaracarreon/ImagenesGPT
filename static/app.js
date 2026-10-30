@@ -110,3 +110,98 @@ form.addEventListener('submit', async (event) => {
 
 document.getElementById('refresh-gallery').addEventListener('click', refreshGallery);
 refreshGallery();
+
+
+const apiKeyInput = document.getElementById('api-key-input');
+const rememberApiKey = document.getElementById('remember-api-key');
+const keyState = document.getElementById('api-key-state');
+const keyFeedback = document.getElementById('key-feedback');
+const saveKeyButton = document.getElementById('save-api-key');
+const forgetKeyButton = document.getElementById('forget-api-key');
+
+function updateKeyState(data) {
+  const sources = {
+    saved: '✓ Clave guardada en Windows',
+    session: '✓ Clave activa esta sesión',
+    environment: '✓ Clave configurada en .env',
+    missing: 'Sin configurar',
+  };
+  keyState.textContent = sources[data.source] || 'Sin configurar';
+  keyState.classList.toggle('configured', Boolean(data.configured));
+  forgetKeyButton.disabled = data.source === 'missing' || data.source === 'environment';
+}
+
+async function refreshKeyState() {
+  try {
+    const response = await fetch('/api/key', {
+      headers: {'X-Local-Token': token},
+      cache: 'no-store',
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || 'No se pudo comprobar la clave.');
+    updateKeyState(data);
+  } catch (error) {
+    keyState.textContent = 'No disponible';
+    keyFeedback.textContent = error.message;
+    keyFeedback.classList.add('error');
+  }
+}
+
+saveKeyButton.addEventListener('click', async () => {
+  const value = apiKeyInput.value.trim();
+  if (value.length < 10) {
+    keyFeedback.textContent = 'Introduce tu clave API.';
+    keyFeedback.classList.add('error');
+    return;
+  }
+  saveKeyButton.disabled = true;
+  keyFeedback.textContent = 'Configurando…';
+  keyFeedback.classList.remove('error');
+  try {
+    const response = await fetch('/api/key', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json', 'X-Local-Token': token},
+      body: JSON.stringify({api_key: value, remember: rememberApiKey.checked}),
+      cache: 'no-store',
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || 'No se pudo guardar la clave.');
+    apiKeyInput.value = '';
+    updateKeyState(data);
+    keyFeedback.textContent = data.source === 'saved'
+      ? 'Clave guardada de forma segura. Podrás usarla al volver a abrir la aplicación.'
+      : 'Clave disponible hasta cerrar la aplicación.';
+  } catch (error) {
+    keyFeedback.textContent = error.message;
+    keyFeedback.classList.add('error');
+  } finally {
+    saveKeyButton.disabled = false;
+  }
+});
+
+forgetKeyButton.addEventListener('click', async () => {
+  forgetKeyButton.disabled = true;
+  keyFeedback.textContent = 'Quitando clave…';
+  keyFeedback.classList.remove('error');
+  try {
+    const response = await fetch('/api/key/forget', {
+      method: 'POST',
+      headers: {'X-Local-Token': token},
+      cache: 'no-store',
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || 'No se pudo quitar la clave.');
+    apiKeyInput.value = '';
+    updateKeyState(data);
+    keyFeedback.textContent = data.source === 'environment'
+      ? 'Clave guardada eliminada. Todavía existe una clave configurada en tu archivo .env.'
+      : 'Clave eliminada de este equipo.';
+  } catch (error) {
+    keyFeedback.textContent = error.message;
+    keyFeedback.classList.add('error');
+  } finally {
+    await refreshKeyState();
+  }
+});
+
+refreshKeyState();

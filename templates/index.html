@@ -24,6 +24,25 @@
           <button id="tab-edit" type="button" role="tab" aria-selected="false" data-mode="edit">▧ Editar imagen</button>
         </div>
         <form id="image-form">
+          <div class="key-configuration" aria-labelledby="api-key-heading">
+            <div class="key-configuration-header">
+              <strong id="api-key-heading">Clave API de OpenAI</strong>
+              <span id="api-key-state" class="key-state" role="status" aria-live="polite">Comprobando…</span>
+            </div>
+            <p>Configúrala una sola vez o úsala solamente mientras esté abierta la aplicación.</p>
+            <label class="key-field-label" for="api-key-input">Tu clave personal</label>
+            <input id="api-key-input" type="password" autocomplete="new-password" spellcheck="false" placeholder="Pega aquí tu clave API" maxlength="512">
+            <label class="remember-option" for="remember-api-key">
+              <input id="remember-api-key" type="checkbox" checked>
+              Recordar de forma segura en esta PC
+            </label>
+            <div class="key-actions">
+              <button id="save-api-key" type="button" class="key-save">Guardar clave</button>
+              <button id="forget-api-key" type="button" class="key-forget">Quitar clave guardada</button>
+            </div>
+            <p id="key-feedback" class="key-feedback" role="status" aria-live="polite"></p>
+            <small>Se protege con el Administrador de credenciales de Windows. Nunca se publica en GitHub ni se guarda en el navegador. <a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener noreferrer">Obtener mi clave API</a>.</small>
+          </div>
           <div id="upload-wrapper" class="field hidden">
             <label for="source-image">Imagen para editar</label>
             <input type="file" id="source-image" name="image" accept="image/png,image/jpeg,image/webp">

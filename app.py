@@ -9,6 +9,9 @@ import os
 import re
 import secrets
 import threading
+
+import keyring
+from keyring.errors import KeyringError, PasswordDeleteError
 from datetime import date, datetime
 from pathlib import Path
 from uuid import uuid4
@@ -38,12 +41,39 @@ app.config.update(
 )
 LOCAL_TOKEN = secrets.token_urlsafe(32)
 request_lock = threading.Lock()
+credential_lock = threading.RLock()
+SESSION_API_KEY: str | None = None
+CREDENTIAL_SERVICE = "ImagenesGPT.OpenAI"
+CREDENTIAL_USER = "current-user"
+
+
+def _key_from_storage() -> tuple[str, str]:
+    """Obtiene la clave solo en Python; jamás se envía al navegador."""
+    with credential_lock:
+        if SESSION_API_KEY:
+            return SESSION_API_KEY, "session"
+        try:
+            stored = keyring.get_password(CREDENTIAL_SERVICE, CREDENTIAL_USER)
+        except KeyringError as exc:
+            raise RuntimeError("No se pudo acceder al almacén seguro de claves de Windows.") from exc
+        if stored:
+            return stored, "saved"
+        legacy = os.environ.get("OPENAI_API_KEY", "").strip()
+        if legacy and legacy != "pega_aqui_tu_clave_api":
+            return legacy, "environment"
+        return "", "missing"
+
+
+def _key_status() -> dict:
+    _, source = _key_from_storage()
+    return {"configured": source != "missing", "source": source}
+
 
 
 def _client() -> OpenAI:
-    key = os.environ.get("OPENAI_API_KEY", "").strip()
+    key, _source = _key_from_storage()
     if not key:
-        raise RuntimeError("Configura OPENAI_API_KEY en el archivo .env.")
+        raise RuntimeError("Configura tu clave de OpenAI en el apartado «Clave API».")
     return OpenAI(api_key=key, timeout=180, max_retries=1)
 
 
@@ -159,6 +189,74 @@ def generate():
 @app.post("/api/edit")
 def edit():
     return _perform("edit")
+
+
+@app.get("/api/key")
+def key_status():
+    _require_local_token()
+    try:
+        response = jsonify(_key_status())
+    except RuntimeError as exc:
+        return jsonify(error=str(exc)), 503
+    response.headers["Cache-Control"] = "no-store"
+    return response
+
+
+@app.post("/api/key")
+def key_save():
+    """Activa una clave para la sesión o la almacena en el llavero del SO."""
+    _require_local_token()
+    body = request.get_json(silent=True) or {}
+    new_key = body.get("api_key")
+    remember = body.get("remember")
+    if not isinstance(new_key, str) or not 10 <= len(new_key.strip()) <= 512:
+        return jsonify(error="Introduce una clave API válida (entre 10 y 512 caracteres)."), 400
+    if "\n" in new_key or "\r" in new_key or not isinstance(remember, bool):
+        return jsonify(error="Los datos de configuración no son válidos."), 400
+
+    global SESSION_API_KEY
+    try:
+        with credential_lock:
+            if remember:
+                keyring.set_password(CREDENTIAL_SERVICE, CREDENTIAL_USER, new_key.strip())
+                SESSION_API_KEY = None
+            else:
+                # Evita que una clave guardada anteriormente vuelva a activarse
+                # en el siguiente inicio si se eligió «solo esta sesión».
+                previous = keyring.get_password(CREDENTIAL_SERVICE, CREDENTIAL_USER)
+                if previous is not None:
+                    keyring.delete_password(CREDENTIAL_SERVICE, CREDENTIAL_USER)
+                SESSION_API_KEY = new_key.strip()
+            payload = _key_status()
+    except (KeyringError, RuntimeError) as exc:
+        app.logger.warning("Error al gestionar credenciales: %s", type(exc).__name__)
+        return jsonify(error="No se pudo acceder al Administrador de credenciales. Comprueba tu sesión de Windows."), 503
+
+    response = jsonify(ok=True, **payload)
+    response.headers["Cache-Control"] = "no-store"
+    return response
+
+
+@app.post("/api/key/forget")
+def key_forget():
+    """Borra la credencial persistente y la clave en memoria de esta sesión."""
+    _require_local_token()
+    global SESSION_API_KEY
+    try:
+        with credential_lock:
+            try:
+                keyring.delete_password(CREDENTIAL_SERVICE, CREDENTIAL_USER)
+            except PasswordDeleteError:
+                pass  # No existía una clave persistente.
+            SESSION_API_KEY = None
+            payload = _key_status()
+    except (KeyringError, RuntimeError) as exc:
+        app.logger.warning("Error al borrar credencial: %s", type(exc).__name__)
+        return jsonify(error="No se pudo eliminar la clave guardada de Windows."), 503
+
+    response = jsonify(ok=True, **payload)
+    response.headers["Cache-Control"] = "no-store"
+    return response
 
 
 @app.get("/api/gallery")

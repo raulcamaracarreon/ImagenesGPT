@@ -138,3 +138,78 @@ def test_download_select_visible_in_interface(client):
     html = client.get("/").get_data(as_text=True)
     assert 'id="download-format"' in html
     assert '<option value="jpg" selected>JPG</option>' in html
+
+
+@pytest.fixture
+def fake_credentials(client, monkeypatch):
+    credentials = {}
+    monkeypatch.setattr(application, "SESSION_API_KEY", None)
+    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+    monkeypatch.setattr(application.keyring, "get_password", lambda service, user: credentials.get((service, user)))
+    monkeypatch.setattr(application.keyring, "set_password", lambda service, user, password: credentials.__setitem__((service, user), password))
+    def delete_password(service, user):
+        if (service, user) not in credentials:
+            raise application.PasswordDeleteError("No existe")
+        del credentials[(service, user)]
+    monkeypatch.setattr(application.keyring, "delete_password", delete_password)
+    return credentials
+
+
+def test_api_key_status_and_no_exposure(client, fake_credentials):
+    response = client.get("/api/key", headers=token_headers())
+    assert response.json == {"configured": False, "source": "missing"}
+    assert "api_key" not in response.json
+    assert client.get("/api/key").status_code == 403
+
+
+def test_save_persistent_key_and_remove_it(client, fake_credentials):
+    key = "sk-test-clave-que-no-se-publica"
+    result = client.post("/api/key", headers=token_headers(), json={"api_key": key, "remember": True})
+    assert result.status_code == 200
+    assert result.json == {"ok": True, "configured": True, "source": "saved"}
+    assert key not in result.get_data(as_text=True)
+    assert fake_credentials[(application.CREDENTIAL_SERVICE, application.CREDENTIAL_USER)] == key
+    assert application._key_from_storage() == (key, "saved")
+    result = client.post("/api/key/forget", headers=token_headers())
+    assert result.status_code == 200
+    assert result.json["source"] == "missing"
+    assert not fake_credentials
+
+
+def test_session_key_is_not_remembered(client, fake_credentials):
+    key = "sk-test-sesion-efimera"
+    result = client.post("/api/key", headers=token_headers(), json={"api_key": key, "remember": False})
+    assert result.status_code == 200
+    assert result.json["source"] == "session"
+    assert not fake_credentials
+    assert application._key_from_storage() == (key, "session")
+    application.SESSION_API_KEY = None
+    assert application._key_from_storage() == ("", "missing")
+
+
+def test_choose_session_removes_previously_saved_key(client, fake_credentials):
+    old_key = "sk-test-clave-persistente"
+    fake_credentials[(application.CREDENTIAL_SERVICE, application.CREDENTIAL_USER)] = old_key
+    result = client.post("/api/key", headers=token_headers(), json={"api_key": "sk-test-sesion-nueva", "remember": False})
+    assert result.status_code == 200
+    assert not fake_credentials
+    assert application._key_from_storage() == ("sk-test-sesion-nueva", "session")
+
+
+def test_key_management_rejects_invalid_payloads(client, fake_credentials):
+    assert client.post("/api/key", json={"api_key": "sk-valid-example", "remember": True}).status_code == 403
+    for payload in [
+        {"api_key": "corta", "remember": True},
+        {"api_key": "sk-valid-example", "remember": "true"},
+        {"api_key": "sk-test-\nsecret", "remember": True},
+    ]:
+        assert client.post("/api/key", headers=token_headers(), json=payload).status_code == 400
+    assert not fake_credentials
+
+
+def test_existing_dotenv_key_remains_supported(client, fake_credentials, monkeypatch):
+    monkeypatch.setenv("OPENAI_API_KEY", "sk-example-env-key")
+    assert client.get("/api/key", headers=token_headers()).json["source"] == "environment"
+    assert application._key_from_storage()[0] == "sk-example-env-key"
+    result = client.post("/api/key/forget", headers=token_headers())
+    assert result.json["source"] == "environment"
