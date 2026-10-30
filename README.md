@@ -2,7 +2,15 @@
 
 Aplicación **local para Windows** que genera y edita imágenes con la API de OpenAI. Interfaz en HTML, CSS y JavaScript, backend Python/Flask. **Sin Vercel, Supabase ni base de datos.**
 
-## Instalación (Windows)
+## Descargar ImagenesGPT para Windows
+
+**[⬇ Descargar instalador ImagenesGPT 1.0.0 (.exe)](https://github.com/raulcamaracarreon/ImagenesGPT/releases/download/v1.0.0/ImagenesGPT-Setup-1.0.0.exe)**
+
+Instala la aplicación con unos clics, sin necesidad de Python, Conda o Git. Al abrirla por primera vez, introduce tu propia clave de la API de OpenAI. La aplicación es gratuita; las generaciones se cobran según el consumo de la API.
+
+[Ver todas las versiones publicadas](https://github.com/raulcamaracarreon/ImagenesGPT/releases).
+
+## Instalación desde el código fuente (para desarrollo)
 
 1. Descarga o clona el repositorio y extrae los archivos a una carpeta.
 2. Necesitas Python 3.11 o superior. Puedes usar Python instalado desde [python.org](https://www.python.org/downloads/) o una instalación existente, por ejemplo Miniforge. El instalador acepta `py`, `python`, `python3` y Python de un entorno Conda activado. No instales otra copia de Python si ya tienes una versión compatible.
