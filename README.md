@@ -53,3 +53,40 @@ Los originales se guardan en `imagenes/` como WebP. El selector **Guardar como**
 ## Usuarios del repositorio público
 
 Cada instalación utiliza la clave del usuario que la configura, con consumo facturado a la cuenta de API correspondiente. **No se distribuye ninguna clave API**. No publiques tu clave ni la envíes a terceros. Usa un proyecto separado y límites de gasto en OpenAI Platform. El almacenamiento de Windows protege la clave en reposo, pero no impide el acceso de otros programas ejecutados por la misma cuenta de Windows. Si optas por «solo esta sesión», la clave reside exclusivamente en la memoria del proceso Python hasta cerrarlo. Para ejecutar las pruebas, instala `requirements-dev.txt`; no se realizan solicitudes pagadas de OpenAI.
+
+## Distribución para Windows: ejecutable e instalador
+
+La aplicación también puede distribuirse sin Python instalado en el equipo de destino.
+
+### Etapa 1 — Portable (compilar y probar primero)
+
+En **PowerShell de Windows**, desde la carpeta del repositorio, ejecuta:
+
+    .\build-portable.ps1
+
+El script instala herramientas de empaquetado en el entorno virtual local, ejecuta las pruebas automatizadas y compila mediante PyInstaller. El resultado aparece en:
+
+    dist\ImagenesGPT\ImagenesGPT.exe
+
+Abre el .exe con doble clic: aparece una ventana de control con opciones de abrir el navegador, abrir la carpeta de imágenes y cerrar el programa. Para distribuirlo, se debe **compartir toda la carpeta** dist\ImagenesGPT (puede comprimirse en un ZIP de distribución), no solamente el .exe. El usuario final **no requiere Python, Conda, pip ni GitHub**. La compilación de Windows debe realizarse en Windows.
+
+### Etapa 2 — Instalador y desinstalador (después de validar el portable)
+
+Requiere Inno Setup 6 **solo en la computadora del desarrollador**. Cuando el ejecutable portátil funcione correctamente, ejecuta:
+
+    .\build-installer.ps1
+
+Esto generará, si Inno Setup está instalado:
+
+    dist\setup\ImagenesGPT-Setup-1.0.0.exe
+
+El instalador incluirá accesos directos y una entrada en **Aplicaciones instaladas** de Windows. Inno Setup proporciona el desinstalador automáticamente; elimina el programa y sus accesos directos. No son necesarios privilegios de administrador para la instalación por usuario.
+
+### Qué se conserva al actualizar o desinstalar
+
+- La versión de desarrollo sigue utilizando la carpeta `imagenes/` del repositorio y admite `.env` local como hasta ahora.
+- La versión ejecutable guarda las imágenes en **%LOCALAPPDATA%\ImagenesGPT\imagenes** (cada cuenta de Windows tiene su propia carpeta).
+- La clave API recordada se conserva en el **Administrador de credenciales de Windows**. No está incorporada al ejecutable.
+- Por seguridad, **la desinstalación NO elimina automáticamente las imágenes ni la clave API**. Esto evita pérdidas accidentales. Para borrarlas definitivamente, primero usa «Quitar clave guardada» en ImagenesGPT y elimina manualmente la carpeta de imágenes tras hacer una copia de seguridad.
+
+Un ejecutable sin firma digital puede mostrar la advertencia **editor desconocido** o SmartScreen. Las pruebas de compilación, de instalador y de desinstalación deben realizarse en Windows antes de distribuir una versión pública. No se utiliza GitHub Actions.
