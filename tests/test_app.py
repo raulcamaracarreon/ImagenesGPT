@@ -289,3 +289,16 @@ def test_gallery_edit_controls_in_template(client):
     assert 'id="saved-image"' in html
     assert 'name="saved_image"' in html
     assert 'id="clear-saved-image"' in html
+
+
+def test_result_actions_share_a_single_toolbar(client):
+    """Formato, descarga y edición aparecen agrupados sin márgenes negativos."""
+    html = client.get("/").get_data(as_text=True)
+    toolbar = html.split('id="download-controls"', 1)[1].split("</div>", 1)[0]
+    assert 'id="download-format"' in toolbar
+    assert 'id="download-btn"' in toolbar
+    assert 'id="edit-current-btn"' in toolbar
+
+    stylesheet = (application.BASE_DIR / "static" / "style.css").read_text(encoding="utf-8")
+    assert ".edit-current{display:inline-flex" in stylesheet
+    assert "margin:-13px" not in stylesheet
